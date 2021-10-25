@@ -1,0 +1,19 @@
+
+MS1 = 2
+MS2 = 3
+
+RELAIS_1 = RELAIS_230V = 14
+RELAIS_2 = RELAIS_12V = 15
+
+MOT_G_STEP = 12
+MOT_G_DIR = 6
+MOT_G_ENn = 5
+SWITCH_G_Supply = 10
+SWITCH_G_Input = 9
+
+
+MOT_D_STEP = 13
+MOT_D_DIR = 19
+MOT_D_ENn = 26
+SWITCH_D_Supply = 17
+SWITCH_D_Input = 27
