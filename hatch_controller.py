@@ -9,8 +9,10 @@ import global_variables
 
 
 class HatchController:
-    sw_supply = SWITCH_G_Supply
-    sw_input = SWITCH_G_Input
+    closed_switch_supply = SWITCH_CLOSED_Supply
+    closed_switch_input = SWITCH_CLOSED_Input
+    opened_switch_supply = SWITCH_OPENED_Supply
+    opened_switch_input = SWITCH_OPENED_Input
     mot_g: Motor
     mot_d: Motor
     pi: pigpio.pi
@@ -29,7 +31,7 @@ class HatchController:
 
     # constants
     max_speed = 7.0
-    closed_position = -1
+    closed_position = -0.3
     opened_position = 362
     timeout = 5.0  # 5 seconds before disabling drivers
 
@@ -37,10 +39,12 @@ class HatchController:
     target_position = position
 
     last_mvmt_time = time.time()
-    last_callback_time = time.time()
+    last_closed_callback_time = time.time()
+    last_opened_callback_time = time.time()
     last_update_time = time.time()
     controller_speed = 0.0
     is_closed = False
+    is_opened = False
 
     control_enabled = False
 
@@ -78,33 +82,65 @@ class HatchController:
         with self.lock:
             self.target_position = new_target
 
-    def configure_switch(self):
-        self.pi.write(self.sw_supply, 1)
-        self.pi.set_mode(self.sw_input, pigpio.INPUT)
-        self.pi.set_pull_up_down(self.sw_input, pigpio.PUD_DOWN)
+    def configure_closed_switch(self):
+        self.pi.set_mode(self.closed_switch_supply, pigpio.OUTPUT)
+        self.pi.write(self.closed_switch_supply, 1)
+        self.pi.set_mode(self.closed_switch_input, pigpio.INPUT)
+        self.pi.set_pull_up_down(self.closed_switch_input, pigpio.PUD_DOWN)
         time.sleep(10e-3)
         self.cb = self.pi.callback(
-            self.sw_input, pigpio.FALLING_EDGE, self.callback)
-        self.enable_callback()
+            self.closed_switch_input, pigpio.FALLING_EDGE, self.closed_callback)
+        self.enable_closed_callback()
 
-    def callback(self, gpio, level, tick):
+    def configure_opened_switch(self):
+        self.pi.set_mode(self.opened_switch_supply, pigpio.OUTPUT)
+        self.pi.write(self.opened_switch_supply, 1)
+        self.pi.set_mode(self.opened_switch_input, pigpio.INPUT)
+        self.pi.set_pull_up_down(self.opened_switch_input, pigpio.PUD_DOWN)
+        time.sleep(10e-3)
+        self.cb = self.pi.callback(
+            self.opened_switch_input, pigpio.FALLING_EDGE, self.opened_callback)
+        self.enable_opened_callback()
+        logging.info(f"current status: opened input: {self.pi.read(self.opened_switch_input)}")
+
+    def closed_callback(self, gpio, level, tick):
         if self.is_closed:
             return
 
-        self.last_callback_time = time.time()
+        self.last_closed_callback_time = time.time()
         self.stop_motors()
         with self.lock:
-            self.position = self.target_position = 0
+            self.position = self.target_position = self.closed_position
 
         self.is_closed = True
         logging.info('now closed')
 
-    def enable_callback(self):
-        if self.pi.read(self.sw_input) == 0:  # already closed
+    def opened_callback(self, gpio, level, tick):
+        if self.is_opened:
+            return
+
+        self.last_opened_callback_time = time.time()
+        self.stop_motors()
+        with self.lock:
+            self.position = self.target_position = self.opened_position + 40
+
+        self.is_opened = True
+        logging.info('now opened')
+
+    def enable_closed_callback(self):
+        if self.pi.read(self.closed_switch_input) == 0:  # already closed
             self.is_closed = True
         else:
-            if time.time() - self.last_callback_time > 1.0:  # after 1 second with endstop not reached, we reenable it
+            if time.time() - self.last_closed_callback_time > 1.0:  # after 1 second with endstop not reached, we reenable it
                 self.is_closed = False
+
+    def enable_opened_callback(self):
+        if self.pi.read(self.opened_switch_input) == 0:  # already opened
+            self.is_opened = True
+        else:
+            if time.time() - self.last_opened_callback_time > 1.0:  # after 1 second with endstop not reached, we reenable it
+                self.is_opened = False
+
 
     def time_since_last_change(self):
         return time.time() - self.last_update_time
@@ -118,7 +154,9 @@ class HatchController:
 
     def control_loop(self):
         logging.info('control loop started')
-        self.configure_switch()
+        self.configure_closed_switch()
+        self.configure_opened_switch()
+
         while not global_variables.stop_event.is_set():
             self.update_position()
             if not self.control_enabled:
@@ -129,7 +167,10 @@ class HatchController:
                     self.disable_motors()
 
             if self.is_closed:
-                self.enable_callback()
+                self.enable_closed_callback()
+
+            if self.is_opened:
+                self.enable_opened_callback()
 
             with self.lock:
                 d = self.target_position - self.position
