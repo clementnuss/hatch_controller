@@ -27,10 +27,11 @@ def on_connect(client, userdata, flags, rc):
 def on_message(cb_client, userdata, msg):
 
     if msg.topic == f"{ECRAN_TOPIC}/set":
-        if msg.payload == "ON":
+        if msg.payload == b"ON":
             pi.write(RELAIS_12V, 1)
+            pi.write(RELAIS_230V, 1)
             mqtt_client.publish(f"{ECRAN_TOPIC}/state", "ON", retain=True)
-        elif msg.payload == "OFF":
+        elif msg.payload == b"OFF":
             pi.write(RELAIS_12V, 0)
             mqtt_client.publish(f"{ECRAN_TOPIC}/state", "OFF", retain=True)
     elif msg.topic == f"{TRAPPE_TOPIC}/set":
