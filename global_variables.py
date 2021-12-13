@@ -6,7 +6,17 @@ logging.basicConfig(level=logging.INFO)
 
 stop_event = threading.Event()
 
-# Connecting to the PiGPIO Daemon
+import os, dotenv
+dotenv.load_dotenv()
+
+
+EMQX_HOST = os.getenv("EMQX_HOST")
+EMQX_PORT = os.getenv("EMQX_PORT")
+EMQX_USER = os.getenv("EMQX_USER")
+EMQX_PASS = os.getenv("EMQX_PASS")
+
+
+# Connecting to e PiGPIO Daemon
 pi = pigpio.pi(host='rpi-ecran', port=28888)
 if not pi.connected:
     logging.fatal("Unable to connect to the pigpiod daemon. exiting")

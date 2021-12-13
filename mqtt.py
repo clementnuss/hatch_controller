@@ -77,9 +77,12 @@ def init_mqtt_client():
 
     mqtt_client.on_connect = on_connect
     mqtt_client.on_message = on_message
+
+    from global_variables import EMQX_HOST, EMQX_PORT, EMQX_USER, EMQX_PASS
     
-    import ssl
-    mqtt_client.tls_set(ca_certs=None, certfile=None, keyfile=None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLS, ciphers=None)
-    mqtt_client.tls_insecure_set(True)
-    mqtt_client.username_pw_set('mqtt', password='0ctPhnJ7qwlmpcPUhF')
-    mqtt_client.connect_async(host="infomaniak.astutus.org", port=30883, keepalive=60)
+    mqtt_client.tls_set()
+    # mqtt_client.tls_insecure_set(True)
+
+    mqtt_client.username_pw_set(username=EMQX_USER, password=EMQX_PASS)
+    mqtt_client.connect_async(host=EMQX_HOST, port=int(EMQX_PORT), keepalive=60)
+
