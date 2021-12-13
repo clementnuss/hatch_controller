@@ -35,7 +35,7 @@ class HatchController:
     opened_position = 362
     timeout = 5.0  # 5 seconds before disabling drivers
 
-    position = opened_position
+    position = opened_position - 20
     target_position = position
 
     last_mvmt_time = time.time()
@@ -77,6 +77,14 @@ class HatchController:
 
     def set_speed(self, speed):
         self.controller_speed = speed
+
+    def get_position(self):
+        with self.lock:
+            return self.position
+
+    def target_position_reached(self):
+        with self.lock:
+            return abs(self.position - self.target_position) < 0.5
 
     def set_target_position(self, new_target):
         with self.lock:

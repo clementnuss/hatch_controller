@@ -1,2 +1,3 @@
 pigpio
 paho-mqtt
+python-dotenv

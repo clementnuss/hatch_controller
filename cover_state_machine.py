@@ -110,6 +110,13 @@ class CoverStateMachine():
 
     def control_loop(self):
         while not stop_event.is_set():
+
+            if hc.target_position_reached():
+                if hc.get_position() <= hc.closed_position + 1:
+                    self.state = Closed()
+                elif hc.get_position() >= hc.opened_position - 10:
+                    self.state = Open()
+
             mqtt_command = ""
             if self.queue.not_empty:
                 mqtt_command = self.queue.get()
