@@ -1,6 +1,6 @@
 
 import paho.mqtt.client as mqtt
-from pin_mapping import *
+from ecran.pin_mapping import *
 
 import json
 import logging

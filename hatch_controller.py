@@ -3,8 +3,7 @@ import time
 import logging
 from threading import Lock
 
-from motor import Motor
-from pin_mapping import *
+from ecran.pin_mapping import *
 import global_variables
 
 
@@ -13,51 +12,48 @@ class HatchController:
     closed_switch_input = SWITCH_CLOSED_Input
     opened_switch_supply = SWITCH_OPENED_Supply
     opened_switch_input = SWITCH_OPENED_Input
-    mot_g: Motor
-    mot_d: Motor
     pi: pigpio.pi
 
     lock = Lock()
 
-    def __init__(self):
+    def __init__(self, motors, constants):
 
         self.pi = global_variables.pi
+        self.motors = motors # array containing the motors to control
+
+        # constants
+        self.max_speed = constants['max_speed']
+        self.closed_position = constants['closed_position']
+        self.opened_position = constants['opened_position']
+        self.timeout = 1.0  # 5 seconds before disabling drivers
 
         # configure stepping on the motor: MS12 = 10 := 1/2 steps
         self.pi.write(MS1, 1)
         self.pi.write(MS2, 0)
-        self.mot_g = Motor(MOT_G_DIR, MOT_G_STEP, MOT_G_ENn, self.pi, direct=1)
-        self.mot_d = Motor(MOT_D_DIR, MOT_D_STEP, MOT_D_ENn, self.pi, direct=0)
 
-    # constants
-    max_speed = 7.0
-    closed_position = -0.3
-    opened_position = 362
-    timeout = 5.0  # 5 seconds before disabling drivers
+        self.position = self.opened_position - 20
+        self.target_position = self.position
 
-    position = opened_position - 20
-    target_position = position
+        self.last_mvmt_time = time.time()
+        self.last_closed_callback_time = time.time()
+        self.last_opened_callback_time = time.time()
+        self.last_update_time = time.time()
+        self.controller_speed = 0.0
+        self.is_closed = False
+        self.is_opened = False
 
-    last_mvmt_time = time.time()
-    last_closed_callback_time = time.time()
-    last_opened_callback_time = time.time()
-    last_update_time = time.time()
-    controller_speed = 0.0
-    is_closed = False
-    is_opened = False
-
-    control_enabled = False
+        self.control_enabled = False
 
     def enable_control(self, disable=False):
         self.control_enabled = not disable
         return self.control_enabled
 
     def enable_motors(self):
-        for mot in [self.mot_g, self.mot_d]:
+        for mot in self.motors:
             mot.enable()
 
     def disable_motors(self):
-        for mot in [self.mot_g, self.mot_d]:
+        for mot in self.motors:
             mot.disable()
 
     def stop(self):
@@ -68,11 +64,12 @@ class HatchController:
     def stop_motors(self):
         if self.controller_speed != 0:
             self.set_speed(0)
+            # logging.info(f"motor speed: {self.controller_speed}")
             self.update_speed()
             self.last_mvmt_time = time.time()
 
     def update_speed(self):
-        for mot in [self.mot_g, self.mot_d]:
+        for mot in self.motors:
             mot.set_speed(self.controller_speed)
 
     def set_speed(self, speed):
@@ -204,5 +201,15 @@ class HatchController:
         logging.info('control loop stopped')
         self.stop_motors()
 
+import os, sys
+if os.getenv("CONTROLLER_TYPE") == "ECRAN":
+    from ecran import vars
 
-hc = HatchController()
+    hc = HatchController(vars.motors, vars.constants)
+elif os.getenv("CONTROLLER_TYPE") == "BEAMER":
+    pass
+
+else:
+    logging.error("FATAL#: CONTROLLER_TYPE env variable must be either ECRAN or BEAMER")
+    sys.exit(14)
+
