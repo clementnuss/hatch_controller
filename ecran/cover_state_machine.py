@@ -1,7 +1,7 @@
 
 from global_variables import stop_event
 from hatch_controller import hc
-from mqtt import mqtt_client, coverQueue
+from ecran.mqtt import mqtt_client, coverQueue
 import logging
 import time
 

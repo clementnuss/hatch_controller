@@ -18,12 +18,12 @@ def main():
     signal.signal(signal.SIGINT, exit_gracefully)
     signal.signal(signal.SIGTERM, exit_gracefully)
 
-    from mqtt import mqtt_loop
+    from ecran.mqtt import mqtt_loop
     mqtt_thread = threading.Thread(
         target=mqtt_loop, name="MQTT-Thread")
     mqtt_thread.start()
 
-    from cover_state_machine import coverFSM
+    from ecran.cover_state_machine import coverFSM
     logging.info("Starting cover state machine (Trappe écran)")
     cover_thread = threading.Thread(
         target=coverFSM.control_loop, name="coverFSM-thread", daemon=True)
