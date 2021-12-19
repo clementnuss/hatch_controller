@@ -2,11 +2,6 @@ import pigpio
 from dataclasses import dataclass
 from global_variables import pi
 
-def mm_to_steps(mm_s: float):
-    # steps_per_turn = 400 # 1/2 stepping -> 2 * 200 
-    # mm_per_turn = 2
-    # steps_per_mm = 400/2 = 200
-    return int(200 * mm_s)
 
 @dataclass
 class Motor:
@@ -14,6 +9,7 @@ class Motor:
     step: int
     en_not: int
     direct: int
+    steps_per_mm: int
             
     def is_enabled(self):
         return not pi.read(self.en_not)
@@ -23,6 +19,9 @@ class Motor:
         
     def disable(self):
         pi.write(self.en_not, 1)
+
+    def mm_to_steps(self, mm_s: float):
+        return int(self.steps_per_mm * mm_s)
         
     def set_direction(self, direction):
         """Set the forward/open (1) or backward/close (0) direction.
@@ -45,5 +44,5 @@ class Motor:
         else:
             self.set_direction(0)
             
-        pi.hardware_PWM(self.step, mm_to_steps(abs(mm_s)), 500000)
+        pi.hardware_PWM(self.step, self.mm_to_steps(abs(mm_s)), 500000)
     

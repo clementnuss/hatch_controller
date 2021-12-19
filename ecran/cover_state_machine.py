@@ -6,8 +6,8 @@ import logging
 import time
 
 TRAPPE_TOPIC = "homeassistant/cover/trappe-ecran/trappe"
-MQTT_OPEN = b"OPEN"
-MQTT_CLOSE = b"CLOSE"
+MQTT_OPEN = b"CLOSE" # intentionally inverted to match homeassistant buttons/UI
+MQTT_CLOSE = b"OPEN"
 MQTT_STOP = b"STOP"
 
 

@@ -2,36 +2,48 @@ import pigpio
 import time
 import logging
 from threading import Lock
+import os, sys
 
-from ecran.pin_mapping import *
 import global_variables
 
-
 class HatchController:
-    closed_switch_supply = SWITCH_CLOSED_Supply
-    closed_switch_input = SWITCH_CLOSED_Input
-    opened_switch_supply = SWITCH_OPENED_Supply
-    opened_switch_input = SWITCH_OPENED_Input
+
+
     pi: pigpio.pi
+
 
     lock = Lock()
 
-    def __init__(self, motors, constants):
+    def __init__(self):
+
+        if os.getenv("CONTROLLER_TYPE") == "ECRAN":
+            from ecran import vars, pin_mapping
+        elif os.getenv("CONTROLLER_TYPE") == "BEAMER":
+            from beamer import vars, pin_mapping
+        else:
+            logging.error("FATAL#: CONTROLLER_TYPE env variable must be either ECRAN or BEAMER")
+            sys.exit(14)
 
         self.pi = global_variables.pi
-        self.motors = motors # array containing the motors to control
+
+        self.motors = vars.motors # array containing the motors to control
+        self.closed_switch_supply = pin_mapping.SWITCH_CLOSED_Supply
+        self.closed_switch_input = pin_mapping.SWITCH_CLOSED_Input
+        self.opened_switch_supply = pin_mapping.SWITCH_OPENED_Supply
+        self.opened_switch_input = pin_mapping.SWITCH_OPENED_Input
 
         # constants
-        self.max_speed = constants['max_speed']
-        self.closed_position = constants['closed_position']
-        self.opened_position = constants['opened_position']
+        self.max_speed = vars.max_speed
+        self.closed_position = vars.closed_position
+        self.opened_position = vars.opened_position
         self.timeout = 1.0  # 5 seconds before disabling drivers
 
+        logging.info(f"ms1: {pin_mapping.MS1} with value {pin_mapping.MS1_value}")
         # configure stepping on the motor: MS12 = 10 := 1/2 steps
-        self.pi.write(MS1, 1)
-        self.pi.write(MS2, 0)
+        self.pi.write(pin_mapping.MS1, pin_mapping.MS1_value)
+        self.pi.write(pin_mapping.MS2, pin_mapping.MS2_value)
 
-        self.position = self.opened_position - 20
+        self.position = self.opened_position
         self.target_position = self.position
 
         self.last_mvmt_time = time.time()
@@ -47,6 +59,9 @@ class HatchController:
     def enable_control(self, disable=False):
         self.control_enabled = not disable
         return self.control_enabled
+
+    def motors_enabled(self):
+        return self.motors[0].is_enabled()
 
     def enable_motors(self):
         for mot in self.motors:
@@ -183,9 +198,7 @@ class HatchController:
             if abs(d) <= 0.5:  # close to target: stop
                 self.stop_motors()
             else:
-                with self.lock:
-                    if self.position > 1.0:
-                        self.enable_motors()
+                self.enable_motors()
 
                 new_speed = min(self.max_speed, 1 +
                                 self.max_speed * (abs(d) + 0.5) / 40)
@@ -201,15 +214,5 @@ class HatchController:
         logging.info('control loop stopped')
         self.stop_motors()
 
-import os, sys
-if os.getenv("CONTROLLER_TYPE") == "ECRAN":
-    from ecran import vars
-
-    hc = HatchController(vars.motors, vars.constants)
-elif os.getenv("CONTROLLER_TYPE") == "BEAMER":
-    pass
-
-else:
-    logging.error("FATAL#: CONTROLLER_TYPE env variable must be either ECRAN or BEAMER")
-    sys.exit(14)
+hc = HatchController()
 
