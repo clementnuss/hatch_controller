@@ -6,8 +6,8 @@ from beamer.hdmi import hdmi_relay
 import logging
 import time
 
-MQTT_OPEN = b"CLOSE"
-MQTT_CLOSE = b"OPEN"
+MQTT_OPEN = b"OPEN"
+MQTT_CLOSE = b"CLOSE"
 MQTT_STOP = b"STOP"
 
 class State():
