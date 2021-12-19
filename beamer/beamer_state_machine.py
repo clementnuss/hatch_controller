@@ -31,7 +31,7 @@ class State():
 
 class Open(State):
     def on_enter(self):
-        mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "state_open")
+        mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "open")
 
     def update(self, mqtt_command=""):
 
@@ -44,7 +44,7 @@ class Open(State):
 class Closed(State):
 
     def on_enter(self):
-        mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "state_closed")
+        mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "closed")
 
     def update(self, mqtt_command=""):
 
@@ -57,7 +57,7 @@ class Closed(State):
 class Stopped(State):
     def on_enter(self):
         hc.stop()
-        mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "state_stopped")
+        mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "stopped")
         logging.info(f"Stopped at {hc.get_position()}")
 
     def update(self, mqtt_command=""):
@@ -72,7 +72,7 @@ class Stopped(State):
 
 class Opening(State):
     def on_enter(self):
-        mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "state_opening")
+        mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "opening")
         hc.set_target_position(hc.opened_position)
 
     def update(self, mqtt_command=""):
@@ -87,7 +87,7 @@ class Opening(State):
 class Closing(State):
 
     def on_enter(self) -> None:
-        mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "state_closing")
+        mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "closing")
         hc.enable_control()
         hc.set_target_position(hc.closed_position)
         return
@@ -97,7 +97,7 @@ class Closing(State):
             return Opening()
         elif mqtt_command == MQTT_STOP:
             # stop hc
-            mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "state_stopped")
+            mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "stopped")
             return Stopped()
 
         return self

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
+import os
+os.environ["CONTROLLER_TYPE"] = "BEAMER"
+
 import hatch_controller
 import global_variables
 import threading

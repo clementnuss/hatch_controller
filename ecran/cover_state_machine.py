@@ -32,7 +32,7 @@ class State():
 
 class Open(State):
     def on_enter(self):
-        mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "state_open")
+        mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "open")
 
     def update(self, mqtt_command=""):
 
@@ -45,7 +45,7 @@ class Open(State):
 class Closed(State):
 
     def on_enter(self):
-        mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "state_closed")
+        mqtt_client.publish(f"{TRAPPE_TOPIC}/state", "closed")
 
     def update(self, mqtt_command=""):
 
