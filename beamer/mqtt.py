@@ -11,9 +11,9 @@ import queue
 
 fsmQueue = queue.Queue(10)
 
-HDMI_TOPIC = "homeassistant/switch/trappe-beamer/hdmi"
-BEAMER_TOPIC = "homeassistant/switch/trappe-beamer/beamer"
-TRAPPE_TOPIC = "homeassistant/cover/trappe-beamer/trappe"
+HDMI_TOPIC = "hass-plan63-1/switch/trappe-beamer/hdmi"
+BEAMER_TOPIC = "hass-plan63-1/switch/trappe-beamer/beamer"
+TRAPPE_TOPIC = "hass-plan63-1/cover/trappe-beamer/trappe"
 
 mqtt_client = mqtt.Client()
 
@@ -31,10 +31,12 @@ def on_message(cb_client, userdata, msg):
     if msg.topic == f"{BEAMER_TOPIC}/set":
         if msg.payload == b"ON":
             pi.write(RELAIS_BEAMER, 0)
+            pi.write(RELAIS_HDMI, 0)
             # logging.info("turning on")
             mqtt_client.publish(f"{BEAMER_TOPIC}/state", "ON", retain=True)
         elif msg.payload == b"OFF":
             pi.write(RELAIS_BEAMER, 1)
+            pi.write(RELAIS_HDMI, 1)
             mqtt_client.publish(f"{BEAMER_TOPIC}/state", "OFF", retain=True)
     elif msg.topic == f"{TRAPPE_TOPIC}/set" or f"{HDMI_TOPIC}/set":
         fsmQueue.put(msg)
@@ -50,7 +52,6 @@ def pi_status_to_homeassistant_status(pi_status):
 def mqtt_loop():
     init_mqtt_client()
 
-    pi.write(RELAIS_12V, 0) # TODO: improve
     mqtt_client.loop_start()
     stop_event.wait(1)
 
@@ -74,7 +75,7 @@ def mqtt_loop():
         mqtt_client.publish(f"{HDMI_TOPIC}/config", json.dumps(hdmi_config))
 
         trappe_config = {}
-        trappe_config['name'] = "Trappe beamer" 
+        trappe_config['name'] = "Trappe beamer"
         trappe_config['command_topic'] = f"{TRAPPE_TOPIC}/set"
         trappe_config['state_topic'] = f"{TRAPPE_TOPIC}/state"
         trappe_config['icon'] = "mdi:wall-sconce-flat"
@@ -93,7 +94,7 @@ def init_mqtt_client():
     mqtt_client.on_message = on_message
 
     from global_variables import EMQX_HOST, EMQX_PORT, EMQX_USER, EMQX_PASS
-    
+
     mqtt_client.tls_set()
     # mqtt_client.tls_insecure_set(True)
 

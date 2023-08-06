@@ -194,7 +194,7 @@ class HatchController:
 
             with self.lock:
                 d = self.target_position - self.position
-            
+
             if abs(d) <= 0.5:  # close to target: stop
                 self.stop_motors()
             else:
