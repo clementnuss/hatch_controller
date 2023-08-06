@@ -105,7 +105,7 @@ class Closing(State):
 
 class CoverStateMachine():
     def __init__(self) -> None:
-        self.state = Open()
+        self.state = Closed()
         self.queue = coverQueue
 
     def control_loop(self):

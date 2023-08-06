@@ -105,7 +105,7 @@ class Closing(State):
 
 class CoverStateMachine():
     def __init__(self) -> None:
-        self.state = Open()
+        self.state = Closed()
 
     def control_loop(self):
         while not stop_event.is_set():
@@ -126,7 +126,7 @@ class CoverStateMachine():
                     elif mqtt_msg.payload == b"OFF":
                         hdmi_relay.disable()
                         mqtt_client.publish(f"{HDMI_TOPIC}/state", b"OFF")
-                    
+
                 elif mqtt_msg.topic == f"{TRAPPE_TOPIC}/set":
                     mqtt_command = mqtt_msg.payload
                     logging.info(f"command: {mqtt_command}")
